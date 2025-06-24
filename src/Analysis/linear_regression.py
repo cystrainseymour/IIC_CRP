@@ -39,12 +39,15 @@ def main():
     data_sans_time = data[1:]
     
     x_matrix = data_sans_time[1:]
+    x_matrix.append([1]*len(x_matrix[0]))
     y = data_sans_time[0]
     
     #print(x_matrix)
     #print(y)
     
     coefs = least_squares(x_matrix, y)[0]
-    print(coefs)
+    print("Intercept: " + str(coefs[-1]))
+    for i in range(len(coefs)-1):
+        print("Coefficient for " + titles[i+2] + ": " + str(coefs[i]))
 
 main()    
