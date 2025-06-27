@@ -33,19 +33,34 @@ def least_squares(x, y):
     #print(y, numpy.shape(y))
     return numpy.linalg.lstsq(x_matrix, y)
     
-def lasso(x, y):    
+def lasso(x, y, a):    
     x_matrix = numpy.transpose(numpy.asarray(x))
     y = numpy.asarray(y)
     
-    clf = linear_model.Lasso(alpha = 0.001)
+    clf = linear_model.Lasso(alpha = a)
     clf.fit(x_matrix, y)
     
     return clf
+    
+def ridge(x, y, a):   
+    x_matrix = numpy.transpose(numpy.asarray(x))
+    y = numpy.asarray(y)
+    
+    clf = linear_model.Ridge(alpha = a)
+    clf.fit(x_matrix, y)
+    
+    return clf    
 
 def main():
     inp = open(sys.argv[1], "r")
     titles = inp.readline().strip().split("\t")
     n_vars = len(titles)
+    
+    lasso_alpha = ridge_alpha = 0.001
+    if len(sys.argv) > 2:
+        lasso_alpha = ridge_alpha = float(sys.argv[2])
+        if len(sys.argv) > 3:
+            ridge_alpha = float(sys.argv[3])
     
     data = []
     
@@ -77,6 +92,9 @@ def main():
     
     #print(x_matrix)
     #print(y)
+    for var in x_matrix:
+        standardize(var)
+    standardize(y)
     
     print("Using least-squares regression:")
     result = least_squares(x_matrix, y)
@@ -87,13 +105,19 @@ def main():
         
     print(str(result[2]) + "% of the variation in the dependent variable \
 can be explained by variation in the independent variables")
-    
-    for var in x_matrix:
-        standardize(var)
-    standardize(y)
 
-    print("\nUsing Lasso regression:")
-    result = lasso(x_matrix, y)
+    print("\nUsing Lasso regression with alpha = " + str(lasso_alpha) + ":")
+    result = lasso(x_matrix, y, lasso_alpha)
+    coefs = result.coef_
+    #print(coefs)
+    intercept = result.intercept_
+    
+    print("Intercept: " + str(intercept))
+    for i in range(len(coefs)):
+        print("Coefficient for " + titles[i+2] + ": " + str(coefs[i]))
+
+    print("\nUsing Ridge regression with alpha = " + str(ridge_alpha) + ":")
+    result = ridge(x_matrix, y, ridge_alpha)
     coefs = result.coef_
     #print(coefs)
     intercept = result.intercept_
