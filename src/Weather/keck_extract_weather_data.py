@@ -15,8 +15,10 @@ def extract_date(d, t):
     
     time_pre = t.split()
     time = list(map(int,time_pre[0].split(":")))
-    if time_pre[-1].lower().startswith("p") and time[0] != 12:
+    if time[0] != 12 and time_pre[-1].lower().startswith("p"):
         time[0] += 12
+    elif time[0] == 12 and not time_pre[-1].lower().startswith("p"):
+        time[0] = 0
     
     return [date[2], date[0], date[1], time[0], time[1]]
     
@@ -31,7 +33,6 @@ def find_relevant_entries(line, entries):
         if entries[i]:
             to_r.append(line[i])
     return to_r
-    
 
 def find_relevant_rows(inp, begin, end, entries):
     line = inp.readline().split("\t")
@@ -64,10 +65,10 @@ def main():
     
     begin = extract_date(args[2], " ".join([args[3], args[4]]))
     end = extract_date(args[5], " ".join([args[6], args[7]]))
-    print(begin, end)
+    #print(begin, end)
     
     vars = extract_col_names(inp.readline(), inp.readline())
-    print(vars)
+    #print(vars)
     entries = [False] * len(vars)
     for i in range(len(vars)):
         for j in range(len(args) - 8):
