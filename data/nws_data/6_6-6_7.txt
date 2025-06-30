@@ -1,0 +1,1 @@
+Date/Time	DATE	HourlyDryBulbTemperature	HourlyPrecipitation	HourlyRelativeHumidity	DailyPrecipitation	
