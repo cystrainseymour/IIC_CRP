@@ -51,9 +51,13 @@ def find_relevant_rows(inp, begin, end, entries):
     rows.append(find_relevant_entries(line, entries))
     
     while is_before(date, end):
-        line = inp.readline().split("\t")
-        date = extract_date(line[0], line[1])
-        rows.append(find_relevant_entries(line, entries))
+        try:
+            line = inp.readline().split("\t")
+            date = extract_date(line[0], line[1])
+            rows.append(find_relevant_entries(line, entries))
+        except:
+            print("File ends at date ", "-".join(list(map(lambda i:str(i), date))))
+            break
     
     return rows
     
@@ -63,6 +67,8 @@ def main():
         args = input("Incorrect number of arguments. Please try again: ").split()
     inp = open(args[0], "r")
     
+    mode = "w"
+    
     begin = extract_date(args[2], " ".join([args[3], args[4]]))
     end = extract_date(args[5], " ".join([args[6], args[7]]))
     #print(begin, end)
@@ -71,17 +77,20 @@ def main():
     #print(vars)
     entries = [False] * len(vars)
     for i in range(len(vars)):
-        for j in range(len(args) - 8):
-            if vars[i].startswith(args[j + 8]):
+        for j in range(8, len(args)):
+            if j == len(args)-1 and args[j] == "a":
+                mode = "a"
+                break
+            if vars[i].startswith(args[j]):
                 entries[i] = True
-                break;
+                break
     
     entries[0] = entries[1] = True # date and time always included
     #print(entries)
     
     rel_rows = find_relevant_rows(inp, begin, end, entries)
     
-    with open(args[1], "w") as outp:
+    with open(args[1], mode) as outp:
         for i in range(len(entries)):
             if entries[i]:
                 outp.write(vars[i] + "\t")
