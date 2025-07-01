@@ -2,8 +2,8 @@ import sys
 
 def main():
     with open(sys.argv[1], "r") as inp:
-        args = map(lamba s: s.lower(), sys.argv[2:])
-        vars = inp.readline().strip().split("\t")
+        args = list(map(lambda s: s.lower(), sys.argv[2:]))
+        vars = list(map(lambda s: s.lower(), inp.readline().strip().split("\t")))
         print(vars)
         which = []
         for arg in args:
