@@ -40,7 +40,7 @@ def lasso(x, y, a):
     clf = linear_model.Lasso(alpha = a)
     clf.fit(x_matrix, y)
     
-    return clf
+    return clf, clf.score(x_matrix, y)
     
 def ridge(x, y, a):   
     x_matrix = numpy.transpose(numpy.asarray(x))
@@ -49,7 +49,7 @@ def ridge(x, y, a):
     clf = linear_model.Ridge(alpha = a)
     clf.fit(x_matrix, y)
     
-    return clf    
+    return clf, clf.score(x_matrix, y)
 
 def main():
     inp = open(sys.argv[1], "r")
@@ -92,8 +92,17 @@ def main():
     
     #print(x_matrix)
     #print(y)
-    for var in x_matrix:
-        standardize(var)
+    i = 0
+    while i < n_vars-2:
+        try:
+            standardize(x_matrix[i])
+            i += 1
+        except ZeroDivisionError:
+            print(titles[i+2] + " has no variation - removed from analysis")
+            x_matrix = x_matrix[:i] + x_matrix[i+1:] 
+            titles = titles[:i+2] + titles[i+3:]
+            n_vars -= 1
+        
     standardize(y)
     
     print("Using least-squares regression:")
@@ -107,7 +116,7 @@ def main():
 can be explained by variation in the independent variables")
 
     print("\nUsing Lasso regression with alpha = " + str(lasso_alpha) + ":")
-    result = lasso(x_matrix, y, lasso_alpha)
+    result, score = lasso(x_matrix, y, lasso_alpha)
     coefs = result.coef_
     #print(coefs)
     intercept = result.intercept_
@@ -115,9 +124,12 @@ can be explained by variation in the independent variables")
     print("Intercept: " + str(intercept))
     for i in range(len(coefs)):
         print("Coefficient for " + titles[i+2] + ": " + str(coefs[i]))
+        
+    print(str(int(score * 10000)/100) + "% of the variation in the dependent variable \
+can be explained by variation in the independent variables")
 
     print("\nUsing Ridge regression with alpha = " + str(ridge_alpha) + ":")
-    result = ridge(x_matrix, y, ridge_alpha)
+    result, score = ridge(x_matrix, y, ridge_alpha)
     coefs = result.coef_
     #print(coefs)
     intercept = result.intercept_
@@ -125,5 +137,8 @@ can be explained by variation in the independent variables")
     print("Intercept: " + str(intercept))
     for i in range(len(coefs)):
         print("Coefficient for " + titles[i+2] + ": " + str(coefs[i]))
+        
+    print(str(int(score * 10000)/100) + "% of the variation in the dependent variable \
+can be explained by variation in the independent variables")
 
 main()    
