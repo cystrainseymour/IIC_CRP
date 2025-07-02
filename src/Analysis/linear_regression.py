@@ -102,6 +102,12 @@ def main():
             x_matrix = x_matrix[:i] + x_matrix[i+1:] 
             titles = titles[:i+2] + titles[i+3:]
             n_vars -= 1
+            
+    if not len(x_matrix):
+        print("No variation in explanatory variables. Summary statistics for independent variable shown below:")
+        print(titles[1]+" mean: "+ str(mean(y)))
+        print(titles[1]+" standard deviation: "+ str(standard_deviation(y)))
+        sys.exit()
         
     standardize(y)
     
