@@ -3,6 +3,7 @@ import sys
 import copy
 from sklearn import linear_model
 import math
+import scipy.stats as stats
 
 def mean(var):
     total = 0
@@ -30,26 +31,70 @@ def least_squares(x, y):
     x_matrix = numpy.transpose(numpy.asmatrix(x_copy))
     #print(x_matrix, numpy.shape(x_matrix))
     y = numpy.asarray(y)
-    #print(y, numpy.shape(y))
-    return numpy.linalg.lstsq(x_matrix, y)
     
-def lasso(x, y, a):    
+    result = numpy.linalg.lstsq(x_matrix, y)
+    coefs = result[0]
+    
+    predicted = []
+    for i in range(len(x[0])):
+        predicted.append(coefs[-1])
+        for j in range(len(x)):
+            predicted[-1] += x[j][i] * coefs[j]
+    
+    score = result[2]
+    
+    return coefs, score, predicted
+    
+def lasso(x, y, a):
     x_matrix = numpy.transpose(numpy.asarray(x))
     y = numpy.asarray(y)
     
     clf = linear_model.Lasso(alpha = a)
     clf.fit(x_matrix, y)
     
-    return clf, clf.score(x_matrix, y)
+    coefs = list(clf.coef_)
+    coefs.append(clf.intercept_)
+    score = clf.score(x_matrix, y)
+    predicted = clf.predict(x_matrix)
     
-def ridge(x, y, a):   
+    return coefs, score, predicted
+    
+def ridge(x, y, a):
     x_matrix = numpy.transpose(numpy.asarray(x))
     y = numpy.asarray(y)
     
     clf = linear_model.Ridge(alpha = a)
     clf.fit(x_matrix, y)
     
-    return clf, clf.score(x_matrix, y)
+    coefs = list(clf.coef_)
+    coefs.append(clf.intercept_)
+    score = clf.score(x_matrix, y)
+    predicted = clf.predict(x_matrix)
+    
+    
+    return coefs, score, predicted
+    
+def f_test(predicted, y, k, r2):
+    #f - test to determine whether the variance of the predicted values came from the same distribution
+    #as the variances of the values predicted using only the intercept or mean. 
+    
+    n = len(predicted)
+    
+    ndf = k - 1
+    ddf = n-(k+1)
+    
+    total_mean = mean([i for i in predicted] + [i for i in y])
+    ss_total = sum([math.pow(i - total_mean, 2) for i in predicted] + [math.pow(i - total_mean, 2) for i in y])
+    ss_betw = sum([math.pow(predicted[i] - y[i], 2) for i in range(n)])
+    ss_within = ss_total - ss_betw
+    
+    numer = ss_betw/ndf
+    denom = ss_within/ss_within
+    
+    f = numer/denom
+    
+    return stats.f.cdf(f, ndf, ddf)
+    
     
 def print_summary_stats(vars, titles):
     print("Summary statistics:")
@@ -135,40 +180,43 @@ def main():
         except ValueError:
             pass
     
-    print("Using least-squares regression:")
-    result = least_squares(x_matrix, y)
-    coefs = result[0]
+    print("Using simple least-squares regression:")
+    coefs, score, predicted = least_squares(x_matrix, y)
     print("Intercept: " + str(coefs[-1]))
     for i in range(len(coefs)-1):
         print("Coefficient for " + titles[i+date_time_end-date_time_start+1] + ": " + str(coefs[i]))
         
-    print(str(result[2]) + "% of the variation in the dependent variable \
+    print(str(score) + "% of the variation in the dependent variable \
 can be explained by variation in the independent variables")
+
+    p = f_test(predicted, y, n_vars, score)
+    print("p-value (chance that model is equal to null): "+str(p))
 
     print("\nUsing Lasso regression with alpha = " + str(lasso_alpha) + ":")
-    result, score = lasso(x_matrix, y, lasso_alpha)
-    coefs = result.coef_
-    #print(coefs)
-    intercept = result.intercept_
+    coefs, score, predicted = lasso(x_matrix, y, lasso_alpha)
     
-    print("Intercept: " + str(intercept))
-    for i in range(len(coefs)):
+    print("Intercept: " + str(coefs[-1]))
+    for i in range(len(coefs)-1):
         print("Coefficient for " + titles[i+date_time_end-date_time_start+1] + ": " + str(coefs[i]))
         
     print(str(int(score * 10000)/100) + "% of the variation in the dependent variable \
 can be explained by variation in the independent variables")
 
+    p = f_test(predicted, y, n_vars, score)
+    print("p-value (chance that model is equal to null: "+str(p))
+
     print("\nUsing Ridge regression with alpha = " + str(ridge_alpha) + ":")
-    result, score = ridge(x_matrix, y, ridge_alpha)
-    coefs = result.coef_
+    coefs, score, predicted = ridge(x_matrix, y, ridge_alpha)
     #print(coefs)
-    intercept = result.intercept_
     
-    print("Intercept: " + str(intercept))
-    for i in range(len(coefs)):
+    print("Intercept: " + str(coefs[-1]))
+    for i in range(len(coefs)-1):
         print("Coefficient for " + titles[i+date_time_end-date_time_start+1] + ": " + str(coefs[i]))
         
     print(str(int(score * 10000)/100) + "% of the variation in the dependent variable \
 can be explained by variation in the independent variables")
+
+    p = f_test(predicted, y, n_vars, score)
+    print("p-value (chance that model is equal to null: "+str(p))
 
 main()    
