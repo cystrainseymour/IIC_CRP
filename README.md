@@ -37,8 +37,7 @@ the command line. To do this, use the format:
     
 For example:
     
-py is_difference_significant.py "../../data/Tinkling Rill (6_17 - 6_23)/comp.txt" 
-"../../data/Chickahominy (6_6 - 6_7)/comp.txt"  "10min_rainfall 0"
+	py is_difference_significant.py "../../data/Tinkling Rill (6_17 - 6_23)/comp.txt" "../../data/Chickahominy (6_6 - 6_7)/comp.txt"  "10min_rainfall 0"
     
 This will look at the data from Tinkling Rill and Chickahominy, comparing data without rainfall
 (10min_rainfall <= 0) and with rainfall. You could also do "10min_rainfall <= 0" or 
