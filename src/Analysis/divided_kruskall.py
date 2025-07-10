@@ -16,7 +16,7 @@ from scipy.stats import kruskal
     and a higher probability there is something actually different between the sites the samples
     came from.
     
-    kruskal_wallace() can be called on its own from another file, but the program can also be run from
+    divided_kruskal() can be called on its own from another file, but the program can also be run from
     the command line. To do this, use the format: 
     
     py is_difference_significant.py [1st/file.txt] [2nd/file.txt] ... (--normalize) var1 val1 var2 val2 ...
@@ -164,7 +164,7 @@ def h_test(sample_groups):
 # and perform the H-test on each. Return the p-values for each
 # group, as well as the divisions/labels for which corresponds 
 # to which group. Can be run/called independently
-def kruskal_wallace(normal = False, *samples, **kwargs):
+def divided_kruskal(normal = False, *samples, **kwargs):
     
     lines = []
     for sample in samples:
@@ -259,7 +259,7 @@ def main():
         inp.close()
         samples.append(data)
 
-    results, divisions = kruskal_wallace(normalize, *samples, **cutoff_kwargs)
+    results, divisions = divided_kruskal(normalize, *samples, **cutoff_kwargs)
     
     print("\nUsing the Kruskal-Wallace test:")
     
