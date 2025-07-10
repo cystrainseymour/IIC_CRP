@@ -5,7 +5,41 @@ import math
 import re
 from scipy.stats import kruskal
 
+'''
+    Given data from two or more different samples (e.g. one stream from a restored area and one
+    from a non-restored area, or two samples of the same stream before and after restoration),
+    and optionally different weather conditions, this program will split each sample into groups 
+    based on the conditions (e.g. high-rain and low-rain groups) and then perform the Kruskal-Wallace
+    H-test on each group between the samples (e.g. comparing low-rain from Sample A with low-rain from
+    Sample B), and then for each group, it returns the probability that both come from the same 
+    distribution. A low p-value/probability means it's less likely the difference is due to chance,
+    and a higher probability there is something actually different between the sites the samples
+    came from.
+    
+    kruskal_wallace() can be called on its own from another file, but the program can also be run from
+    the command line. To do this, use the format: 
+    
+    py is_difference_significant.py [1st/file.txt] [2nd/file.txt] ... (--normalize) var1 val1 var2 val2 ...
+    
+    For example:
+    
+    py is_difference_significant.py "../../data/Tinkling Rill (6_17 - 6_23)/comp.txt" 
+    "../../data/Chickahominy (6_6 - 6_7)/comp.txt"  "10min_rainfall 0"
+    
+    Adding "normalize" or "--normalize" after the files but before the conditions will normalize the 
+    turbidity data. Adding no conditions will have the program perform the test on all the data from 
+    all the samples together.    
+    
+    For specifying weather conditions, the following formats all do the same thing: "variable value",
+    "variable=value", "variable<=value", "variable<value", "variable-value". The variable names aren't
+    case-sensitive, and spaces, periods, and underscores are interchangeable.
+    
+    Data should be in a tab-separated values format.
+'''
+
 # rescale data so that it falls within the range 0-1
+# useful for when the sensors haven't been calibrated, 
+# but it's probably more robust without normalization 
 def normalize(data):
     maxim = 0
     minim = -1
@@ -22,6 +56,9 @@ def normalize(data):
         data[i] -= minim
         data[i] /= data_range
     
+# given the titles of the variables in different samples,
+# return only the titles/variables that are common between 
+# all of the samples (after adjusting for formatting)
 def get_common_variables(*args):
     union = []
     n_union = []
@@ -40,9 +77,10 @@ def get_common_variables(*args):
     
     return [union[i] for i in range(len(union)) if n_union[i] == len(args)]
     
-# given the titles of the columns and the cutoffs for each variable, return the a list of the cutoff values
-# in the order that the corresponding columns appear -- with None in the spots that correspond to columns
-# without specified cutoff values
+# given the titles of the columns and the cutoffs for each 
+# variable, return the list of the cutoff values in the order 
+# that the corresponding columns appear -- with None in the 
+# spots that correspond to columns without specified cutoff values
 def initialize_cutoffs(titles, **kwargs):
     n_vars = len(titles)
     cutoffs = [None]*(n_vars)
@@ -121,11 +159,15 @@ def h_test(sample_groups):
         results.append(p)
     return results
     
+# "main" part - given the samples and cutoff keywords, 
+# find the common variables, divide each sample into groups,
+# and perform the H-test on each. Return the p-values for each
+# group, as well as the divisions/labels for which corresponds 
+# to which group. Can be run/called independently
 def kruskal_wallace(normal = False, *samples, **kwargs):
     
     lines = []
     for sample in samples:
-        #print(sample)
         lines.append(sample[0])
     titles = get_common_variables(*lines)
     
@@ -161,6 +203,9 @@ def kruskal_wallace(normal = False, *samples, **kwargs):
     
     return results, all_divisions[0]
     
+# part of the user-interface - given strings from 
+# the command line corresponding to the conditions,
+# return them in a dictionary
 def get_cutoffs_dict(strings):
     names_values = list(map(lambda s : re.split(" |=|-|<=|<",s), strings))
     names = [name[0] for name in names_values]
@@ -172,6 +217,12 @@ def get_cutoffs_dict(strings):
 
     return cutoffs
 
+# for the user-interface/command line - read in
+# the files provided by the command line, check if
+# the "normalize" keyword is used, and get the conditions.
+# Format the conditions in a dictionary, and pass the data,
+# conditions, and whether or not to normalize to kruskal_wallace.
+# Format and print the results in a readable way
 def main():
     files = []
     
