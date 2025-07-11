@@ -40,8 +40,8 @@ For example:
 	py divided_kruskall.py "../../data/Tinkling Rill (6_17 - 6_23)/comp.txt" "../../data/Chickahominy (6_6 - 6_7)/comp.txt"  "10min_rainfall 0"
     
 This will look at the data from Tinkling Rill and Chickahominy, comparing data without rainfall
-(10min_rainfall <= 0) and with rainfall. You could also do "10min_rainfall <= 0" or 
-"10min_rainfall = 0", which will do exactly the same thing. Adding "normalize" or "--normalize"
+(10min_rainfall <= 0) and with rainfall. You could also do "10min_rainfall<=0" or 
+"10min_rainfall=0", which will do exactly the same thing. Adding "normalize" or "--normalize"
 after the files but before the conditions will normalize the turbidity data. Adding no conditions
 will have the program perform the test on all the data from all the samples together.    
     
