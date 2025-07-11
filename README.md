@@ -1,5 +1,5 @@
 # IIC_CRP
-<img src = "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%2Fid%2FOIP.29OiqRVA7Ekl-cuhRidougHaOs%3Fpid%3DApi&f=1&ipt=07e1f52ff696d9397a9bbb95e300381556d715256da5ea6b89584515538f31d6" alt = "Madagascar">
+<img src = "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fwww.wm.edu%2Foffices%2Fwholeofgovernment%2Fwhat-we-do%2Fconferences%2Fwgc-national-security-conference%2F2023-national-security-conference%2Fiic-logo.png&f=1&nofb=1&ipt=d0500cab7a3895729e8debffc6408259b38835887d4a73c34b540a8c6ca2cdd5" alt = "W&M IIC logo">
 Code for 3rd year of the Conservation International and W&amp;M Institute for Integrative Conservation collaborative Conservation Research Project concerning turbidity monitoring around Lake Alaotra, Madagascar.
 
 Includes code for the turbidity sensors, as well as code for data analysis and graphing.
@@ -109,5 +109,3 @@ effective.
 
 This is a useful method, but it does require gathering data over a period of time, since for each site, 
 or at least the treatment site, you need data from before and after the treatment is applied.
-
-<img src = "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fwww.wm.edu%2Foffices%2Fwholeofgovernment%2Fwhat-we-do%2Fconferences%2Fwgc-national-security-conference%2F2023-national-security-conference%2Fiic-logo.png&f=1&nofb=1&ipt=d0500cab7a3895729e8debffc6408259b38835887d4a73c34b540a8c6ca2cdd5" alt = "W&M IIC logo">
