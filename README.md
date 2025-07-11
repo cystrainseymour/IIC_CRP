@@ -1,4 +1,5 @@
 # IIC_CRP
+<img src = "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fwww.wm.edu%2Foffices%2Fwholeofgovernment%2Fwhat-we-do%2Fconferences%2Fwgc-national-security-conference%2F2023-national-security-conference%2Fiic-logo.png&f=1&nofb=1&ipt=d0500cab7a3895729e8debffc6408259b38835887d4a73c34b540a8c6ca2cdd5" alt = "W&M IIC logo">
 Code for 3rd year of the Conservation International and W&amp;M Institute for Integrative Conservation collaborative Conservation Research Project concerning turbidity monitoring around Lake Alaotra, Madagascar.
 
 Includes code for the turbidity sensors, as well as code for data analysis and graphing.
