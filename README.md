@@ -109,3 +109,15 @@ effective.
 
 This is a useful method, but it does require gathering data over a period of time, since for each site, 
 or at least the treatment site, you need data from before and after the treatment is applied.
+
+The method implemented here is based off Xu, 2010's “Generalized Synthetic Control Method." This takes into 
+account factors that might affect the outcome, and also allows for multiple treated samples, which can also 
+have different treatment dates. This is useful for the Lake Alaotra project, since turbidity and erosion are
+likely affected by other factors, such as rainfall or even the amount of daylight -- these are probably 
+similar at different sites, but it's easy to imagine rainfall at slightly different times. The reforestation
+project is also implemented in stages, so there are treated/reforested sites with different treatment dates.
+
+
+Xu, Yiqing. “Generalized Synthetic Control Method: Causal Inference with Interactive Fixed Effects Models.” 
+	Political Analysis, vol. 25, no. 1, Jan. 2017, pp. 57–76. Cambridge University Press, 
+	https://doi.org/10.1017/pan.2016.2.
