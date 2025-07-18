@@ -1,52 +1,36 @@
-import numpy
 import sys
+import pandas
+import numpy
 import copy
 from sklearn import linear_model
+from sklearn.preprocessing import StandardScaler
 import math
-import scipy.stats as stats
+import scipy.stats as stats    
 
-def mean(var):
-    total = 0
-    for i in var:
-        total += i
-    return total/len(var)
+def ordinary_least_squares(x, y):
+    x_matrix = copy.deepcopy(x)
+    x_matrix["Gradient"] = [1]*len(x_matrix)
     
-def standard_deviation(var):
-    var_mean = mean(var)
-    total = 0
-    for i in var:
-        total += math.pow(i - var_mean, 2)
-    return math.sqrt(total/(len(var)-1))
+    x_matrix = numpy.asmatrix(x)
     
-def standardize(var):
-    stddev = standard_deviation(var)
-    mean_var = mean(var)
-    for i in range(len(var)):
-        var[i] = (var[i] - mean_var)/stddev
-
-def least_squares(x, y):
-    x_copy = copy.deepcopy(x)
-    x_copy.append([1]*len(x[0]))
-    
-    x_matrix = numpy.transpose(numpy.asmatrix(x_copy))
-    #print(x_matrix, numpy.shape(x_matrix))
     y = numpy.asarray(y)
     
     result = numpy.linalg.lstsq(x_matrix, y)
     coefs = result[0]
     
     predicted = []
-    for i in range(len(x[0])):
+    
+    for i in range(len(x)):
         predicted.append(coefs[-1])
-        for j in range(len(x)):
-            predicted[-1] += x[j][i] * coefs[j]
+        for j in range(len(x.columns)):
+            predicted[-1] += x[x.columns[j]][i] * coefs[j]
     
     score = result[2]
     
     return coefs, score, predicted
     
 def lasso(x, y, a):
-    x_matrix = numpy.transpose(numpy.asarray(x))
+    x_matrix = numpy.asarray(x)
     y = numpy.asarray(y)
     
     clf = linear_model.Lasso(alpha = a)
@@ -60,7 +44,7 @@ def lasso(x, y, a):
     return coefs, score, predicted
     
 def ridge(x, y, a):
-    x_matrix = numpy.transpose(numpy.asarray(x))
+    x_matrix = numpy.asarray(x)
     y = numpy.asarray(y)
     
     clf = linear_model.Ridge(alpha = a)
@@ -83,7 +67,7 @@ def f_test(predicted, y, k, r2):
     ndf = k - 1
     ddf = n-(k+1)
     
-    total_mean = mean([i for i in predicted] + [i for i in y])
+    total_mean = sum([i for i in predicted] + [i for i in y])/n
     ss_total = sum([math.pow(i - total_mean, 2) for i in predicted] + [math.pow(i - total_mean, 2) for i in y])
     ss_betw = sum([math.pow(predicted[i] - y[i], 2) for i in range(n)])
     ss_within = ss_total - ss_betw
@@ -98,93 +82,70 @@ def f_test(predicted, y, k, r2):
     
 def print_summary_stats(vars, titles):
     print("Summary statistics:")
-    for i in range(len(vars)):
-        print(titles[i]+" mean: "+ str(mean(vars[i])))
-        print(titles[i]+" standard deviation: "+ str(standard_deviation(vars[i])), end = "\n\n")
+    for i in range(len(titles)):
+        print(titles[i]+" mean: "+ str(vars.loc[:,titles[i]].mean()))
+        print(titles[i]+" standard deviation: "+ str(vars.loc[:,titles[i]].std()), end = "\n\n")
 
 def main():
-    inp = open(sys.argv[1], "r")
-    titles = inp.readline().strip().split("\t")
-    n_vars = len(titles)
+    inp = sys.argv[1]
     
-    data = []
+    data = pandas.read_csv(inp, sep="\t")
     
-    try:
-        while(True):
-            line = inp.readline().strip().split("\t")
-            #print(line)
-            try:
-                for i in range(n_vars):
-                    try:
-                        data[i].append(float(line[i]))
-                    except ValueError:
-                        data[i].append(line[i])
-            except IndexError:
-                if line[0] == "":
-                    raise EOFError
-                for i in range(n_vars):
-                    try:
-                        data.append([float(line[i])])
-                    except ValueError:
-                        data.append([line[i]])
-    except EOFError:
-        pass
+    date_time_cols = ["Date", "Time", "Datetime"]
     
-    date_time_end = 1
-    date_time_start = 0
-    for i in range(2,len(sys.argv)):
-        if sys.argv[i].lower().startswith("-d"):
-            date_time_end = int(sys.argv[i + 1])
-            try:
-                date_time_start = int(sys.argv[i + 2])
-            except IndexError:
-                pass
-        
-    data_sans_time = data[0:date_time_start] + data[date_time_end:len(data)]
-    #print(data)
+    for i in range(2, len(sys.argv)):
+        date_time_cols.append(sys.argv[i])
     
-    x_matrix = data_sans_time[1:]
-    y = data_sans_time[0]
-    
-    #print(x_matrix)
-    #print(y)
-    
-    print_summary_stats(data_sans_time, titles[0:date_time_start] + titles[date_time_end:len(titles)])
-    
-    if "--summary" in sys.argv:
-        sys.exit()
-    i = 0
-    while i < n_vars-(date_time_end-date_time_start + 1):
+    data_sans_time = data
+    for col in date_time_cols:
         try:
-            standardize(x_matrix[i])
-            i += 1
-        except ZeroDivisionError:
-            print(titles[i + 1 + date_time_end - date_time_start] + " has no variation - removed from analysis")
-            x_matrix = x_matrix[:i] + x_matrix[i + 1:] 
-            titles = titles[:i + date_time_end - date_time_start] + titles[i + date_time_end - date_time_start + 1:]
-            n_vars -= 1
+            data_sans_time = data_sans_time.drop(col, axis = 1)
+        except:
+            pass
             
+    n_vars = len(data_sans_time.columns)
+    
+    # print(data.head())
+    # print(data.columns)
+    
+    x_matrix = data_sans_time.drop(data_sans_time.columns[0], axis = 1)
+    y = data_sans_time[data_sans_time.columns[0]]
+    
+    if "onehot" in "_".join(list(map(lambda s: s.replace("_", ""), sys.argv[2:]))).lower().replace("-", ""):
+        data_sans_time = data_sans_time.drop([col for col in data_sans_time.columns if col.startswith("ONEHOT")], axis=1)
+    
+    print_summary_stats(data_sans_time, data_sans_time.columns)
+    
+    if "summary" in "_".join(list(map(lambda s: s.replace("_", ""), sys.argv[2:]))).lower().replace("-", ""):
+        sys.exit()
+        
+    for col in x_matrix.columns:
+        if not x_matrix[col].std:
+            x_matrix.drop(col)
+            print(col, "has no variation -- removed from analysis")
+
     if not len(x_matrix):
         print("No variation in explanatory variables. Summary statistics for independent variable shown below:")
         print_summary_stats([y], titles)
         sys.exit()
     
-    standardize(y)
+    sc = StandardScaler()
+    x_matrix = pandas.DataFrame(sc.fit_transform(x_matrix), columns = x_matrix.columns)
     
     lasso_alpha = ridge_alpha = 0.001
     if len(sys.argv) > 2:
         try:
-            lasso_alpha = ridge_alpha = float(sys.argv[2])
+            lasso_alpha = ridge_alpha = float(sys.argv[-2])
             if len(sys.argv) > 3:
-                ridge_alpha = float(sys.argv[3])
+                ridge_alpha = float(sys.argv[-1])
         except ValueError:
             pass
     
     print("Using simple least-squares regression:")
-    coefs, score, predicted = least_squares(x_matrix, y)
+    coefs, score, predicted = ordinary_least_squares(x_matrix, y)
     print("Intercept: " + str(coefs[-1]))
     for i in range(len(coefs)-1):
-        print("Coefficient for " + titles[i+date_time_end-date_time_start+1] + ": " + str(coefs[i]))
+        print("Coefficient for " + x_matrix.columns[i] + ": " + str(coefs[i]))
         
     print(str(score) + "% of the variation in the dependent variable \
 can be explained by variation in the independent variables")
@@ -197,7 +158,7 @@ can be explained by variation in the independent variables")
     
     print("Intercept: " + str(coefs[-1]))
     for i in range(len(coefs)-1):
-        print("Coefficient for " + titles[i+date_time_end-date_time_start+1] + ": " + str(coefs[i]))
+        print("Coefficient for " + x_matrix.columns[i] + ": " + str(coefs[i]))
         
     print(str(int(score * 10000)/100) + "% of the variation in the dependent variable \
 can be explained by variation in the independent variables")
@@ -211,7 +172,7 @@ can be explained by variation in the independent variables")
     
     print("Intercept: " + str(coefs[-1]))
     for i in range(len(coefs)-1):
-        print("Coefficient for " + titles[i+date_time_end-date_time_start+1] + ": " + str(coefs[i]))
+        print("Coefficient for " + x_matrix.columns[i] + ": " + str(coefs[i]))
         
     print(str(int(score * 10000)/100) + "% of the variation in the dependent variable \
 can be explained by variation in the independent variables")
