@@ -1,80 +1,41 @@
 import sys
+import pandas as pd
+import numpy as np
 
-def read_data(inp, col = 0):
-    data = []
-    
-    for file in inp:
-        f = open(file, "r")
-        while True:
-            try:
-                entry = f.readline().split("\t")[col]
-                
-                if entry.isalpha():
-                    continue
-                data.append(float(entry))
-            except Exception as e:
-                
-                break
-    
-    return data    
-
-def remove_outliers(data):
-    data.sort()
-    n = len(data)
-    
-    med = data[int(n/2)]
-    q1 = data[int(n/4)]
-    q3 = data[int(3*n/4)]
-    if (not n % 2):
-        med += data[int(1 + n/2)]
-        med /= 2
-        q1 = data[int(n/4)]
-        q3 = data[int(3*n/4)]
-        if (not n % 4):
-            q1 += data[int(n/4) + 1]
-            q3 += data[int(3*n/4) + 1]
-            q1 /= 2
-            q3 /= 2
-    elif not (n-1) % 4:
-        q1 += data[int(n/4) + 1]
-        q3 += data[int(3*n/4) + 1]
-        q1 /= 2
-        q3 /= 2
+def remove_outliers(data, cols):
+    beg = 0
+    end = 0
+    for col in cols:
+        med = data[col].median()
+        iqr = np.quantile(data[col], 0.75) - np.quantile(data[col], 0.25)
         
-    iqr = abs(q3-q1)
-    
-    iqr *= 1.5
-    minim = med - iqr
-    maxim = med + iqr
-    #print(n, med, q1, q3, iqr, minim, maxim)
-    
-    start = 0
-    while data[start] < minim:
-        start += 1
-    
-    end = n - 1
-    while data[end] > maxim:
-        end -= 1
+        iqr *= 1.5
+        minim = med - iqr
+        maxim = med + iqr
         
-    data = data[start:end+1]
-    return start, n - end - 1
+        beg += len(data[data[col] < med - iqr])
+        end += len(data[data[col] > med + iqr])
+        
+        data.drop(data[data[col] < med - iqr].index, axis = 0, inplace = True)
+        data.drop(data[data[col] > med + iqr].index, axis = 0, inplace = True)
+        
+    return beg, end
 
 def main():
     
-    inp = sys.argv[1:len(sys.argv)-2]
-    col = int(sys.argv[-2])
-    if not len(inp):
-        inp = sys.argv[1:len(sys.argv)-1]
-        col = 0
-    data = read_data(inp, col)
+    inp = sys.argv[1]
+    outp = sys.argv[2]
     
-    outp = sys.argv[-1]
+    data = pd.read_csv(inp, sep="\t")
     
-    beg, end = remove_outliers(data)
+    cols = [data.columns[1]]
+    if len(sys.argv) >= 4:
+        cols = sys.argv[3:]
+    
+    beg, end = remove_outliers(data, cols)
     print(beg, "left outliers and", end, "right outliers removed from data")
     
-    with open(outp, "w") as f:
-        f.write("\n".join(list(map(str,map(int,data)))))
-        
+    data.to_csv(outp, sep = "\t", index = False)
+    
 if __name__ == "__main__":
     main()

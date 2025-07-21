@@ -1,6 +1,7 @@
 import sys
 from datetime import datetime
 import pandas as pd
+import re
 
 def parse_date(row, time_col):
     date = row[time_col]
@@ -48,12 +49,13 @@ def add_one_hot(df, time_col = None):
 
 def main():
     inp = sys.argv[1]
-    outp = sys.argv[2]
+    outp = inp[:len(inp)-4] + "_onehot.txt"
+    if len(sys.argv) > 2:
+        outp = sys.argv[2]
     
     data = pd.read_csv(inp, sep="\t")
     
     add_one_hot(data)
-    print(data.head())
     
     data.to_csv(outp, sep = "\t", index = False)
     
