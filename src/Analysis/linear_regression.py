@@ -6,6 +6,7 @@ from sklearn import linear_model
 from sklearn.preprocessing import StandardScaler
 import math
 import scipy.stats as stats    
+import matplotlib.pyplot as plt
 
 def ordinary_least_squares(x, y):
     x_matrix = copy.deepcopy(x)
@@ -58,24 +59,26 @@ def ridge(x, y, a):
     
     return coefs, score, predicted
     
-def f_test(predicted, y, k, r2):
+def f_test(predicted, y, k):
     #f - test to determine whether the variance of the predicted values came from the same distribution
     #as the variances of the values predicted using only the intercept or mean. 
     
     n = len(predicted)
     
     ndf = k - 1
-    ddf = n-(k+1)
+    ddf = n - k
     
-    total_mean = sum([i for i in predicted] + [i for i in y])/n
-    ss_total = sum([math.pow(i - total_mean, 2) for i in predicted] + [math.pow(i - total_mean, 2) for i in y])
-    ss_betw = sum([math.pow(predicted[i] - y[i], 2) for i in range(n)])
-    ss_within = ss_total - ss_betw
+    total_mean = sum(y)/n
+    ss_total = sum([math.pow(i - total_mean, 2) for i in y])
     
-    numer = ss_betw/ndf
-    denom = ss_within/ss_within
+    ss_r = sum([math.pow(i - total_mean, 2) for i in predicted])
     
-    f = numer/denom
+    ss_e = ss_total - ss_r
+    
+    msr = ss_r/ddf
+    mse = ss_r/ndf
+    
+    f = mse/msr
     
     return stats.f.cdf(f, ndf, ddf)
     
@@ -87,9 +90,9 @@ def print_summary_stats(vars, titles):
         print(titles[i]+" standard deviation: "+ str(vars.loc[:,titles[i]].std()), end = "\n\n")
 
 def main():
-    inp = sys.argv[1]
+    files = sys.argv[1].split(", ")
     
-    data = pandas.read_csv(inp, sep="\t")
+    data = pandas.concat(pandas.read_csv(inp, sep="\t") for inp in files)
     
     date_time_cols = ["Date", "Time", "Datetime"]
     
@@ -129,9 +132,6 @@ def main():
         print_summary_stats([y], titles)
         sys.exit()
     
-    sc = StandardScaler()
-    x_matrix = pandas.DataFrame(sc.fit_transform(x_matrix), columns = x_matrix.columns)
-    
     lasso_alpha = ridge_alpha = 0.001
     if len(sys.argv) > 2:
         try:
@@ -150,8 +150,12 @@ def main():
     print(str(score) + "% of the variation in the dependent variable \
 can be explained by variation in the independent variables")
 
-    p = f_test(predicted, y, n_vars, score)
+    p = f_test(predicted, y, n_vars)
     print("p-value (chance that model is equal to null): "+str(p))
+    
+    
+    sc = StandardScaler()
+    x_matrix = pandas.DataFrame(sc.fit_transform(x_matrix), columns = x_matrix.columns)
 
     print("\nUsing Lasso regression with alpha = " + str(lasso_alpha) + ":")
     coefs, score, predicted = lasso(x_matrix, y, lasso_alpha)
@@ -163,12 +167,12 @@ can be explained by variation in the independent variables")
     print(str(int(score * 10000)/100) + "% of the variation in the dependent variable \
 can be explained by variation in the independent variables")
 
-    p = f_test(predicted, y, n_vars, score)
-    print("p-value (chance that model is equal to null: "+str(p))
+    p = f_test(predicted, y, n_vars)
+    print("p-value (chance that model is equal to null): "+str(p))
+    
 
     print("\nUsing Ridge regression with alpha = " + str(ridge_alpha) + ":")
     coefs, score, predicted = ridge(x_matrix, y, ridge_alpha)
-    #print(coefs)
     
     print("Intercept: " + str(coefs[-1]))
     for i in range(len(coefs)-1):
@@ -177,7 +181,14 @@ can be explained by variation in the independent variables")
     print(str(int(score * 10000)/100) + "% of the variation in the dependent variable \
 can be explained by variation in the independent variables")
 
-    p = f_test(predicted, y, n_vars, score)
-    print("p-value (chance that model is equal to null: "+str(p))
+    p = f_test(predicted, y, n_vars)
+    print("p-value (chance that model is equal to null): "+str(p))
+    
+    data["Predicted Turbidity"] = predicted
+    
+    plt.plot("Average Turbidity", data = data, marker = "o", color = "black", linewidth = 2)
+    plt.plot("Predicted Turbidity", data = data, marker = "o", color = "red", linewidth = 2)
+    plt.legend(loc='upper right')
+    plt.show()
 
-main()    
+main()
