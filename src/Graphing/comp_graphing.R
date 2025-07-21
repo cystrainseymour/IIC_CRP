@@ -10,6 +10,7 @@ graph <- function(path){
 	fig <- plot_ly(width = 2000)
 
 	turb_color <- "#000000"
+	pred_color <- "#000000"
 	rain_color <- "#3c00ff"
 	
 	wind_speed_color <- "#808080"
@@ -94,6 +95,7 @@ graph <- function(path){
 	entries[["high"]] <- c(hi_color, "y3", "High Temp")
 	entries[["low"]] <- c(low_color, "y3", "Low Temp")
 	entries[["thsw"]] <- c(thsw_color, "y3", "THSW Index")
+	entries[["predictions"]] <- c(pred_color, "y1", "Predictions")
 	  
 	fig <- fig %>% add_trace(x = as.list(my_data[,1]), y = my_data[,2], mode = "lines+markers", name = colnames(my_data)[2], type = "scatter", marker = list(color = turb_color, showticklabels = FALSE), line = list(color = turb_color))
 
