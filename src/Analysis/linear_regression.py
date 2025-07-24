@@ -12,7 +12,7 @@ def ordinary_least_squares(x, y):
     x_matrix = copy.deepcopy(x)
     x_matrix["Gradient"] = [1]*len(x_matrix)
     
-    x_matrix = numpy.asmatrix(x)
+    x_matrix = numpy.asmatrix(x_matrix)
     
     y = numpy.asarray(y)
     
@@ -26,7 +26,7 @@ def ordinary_least_squares(x, y):
         for j in range(len(x.columns)):
             predicted[-1] += x[x.columns[j]][i] * coefs[j]
     
-    score = result[2]
+    score = result[2]/100
     
     return coefs, score, predicted
     
@@ -86,13 +86,15 @@ def f_test(predicted, y, k):
 def print_summary_stats(vars, titles):
     print("Summary statistics:")
     for i in range(len(titles)):
-        print(titles[i]+" mean: "+ str(vars.loc[:,titles[i]].mean()))
-        print(titles[i]+" standard deviation: "+ str(vars.loc[:,titles[i]].std()), end = "\n\n")
+        if not titles[i].startswith("ONEHOT"):
+            print(titles[i]+" mean: "+ str(vars.loc[:,titles[i]].mean()))
+            print(titles[i]+" standard deviation: "+ str(vars.loc[:,titles[i]].std()), end = "\n\n")
 
 def main():
     files = sys.argv[1].split(", ")
     
     data = pandas.concat(pandas.read_csv(inp, sep="\t") for inp in files)
+    data.set_index(pandas.Index(range(len(data))), inplace = True)
     
     date_time_cols = ["Date", "Time", "Datetime"]
     
@@ -123,9 +125,10 @@ def main():
         sys.exit()
         
     for col in x_matrix.columns:
-        if not x_matrix[col].std:
-            x_matrix.drop(col)
-            print(col, "has no variation -- removed from analysis")
+        if not x_matrix[col].std():
+            x_matrix.drop(col, axis = 1, inplace = True)
+            data_sans_time.drop(col, axis = 1, inplace = True)
+            print(col, "has no variation -- removed from analysis\n")
 
     if not len(x_matrix):
         print("No variation in explanatory variables. Summary statistics for independent variable shown below:")
@@ -143,11 +146,16 @@ def main():
     
     print("Using simple least-squares regression:")
     coefs, score, predicted = ordinary_least_squares(x_matrix, y)
+    
+    best_score = score
+    best_pred = predicted
+    best_coefs = coefs
+    
     print("Intercept: " + str(coefs[-1]))
     for i in range(len(coefs)-1):
         print("Coefficient for " + x_matrix.columns[i] + ": " + str(coefs[i]))
         
-    print(str(score) + "% of the variation in the dependent variable \
+    print(str(int(score * 10000)/100) + "% of the variation in the dependent variable \
 can be explained by variation in the independent variables")
 
     p = f_test(predicted, y, n_vars)
@@ -159,6 +167,11 @@ can be explained by variation in the independent variables")
 
     print("\nUsing Lasso regression with alpha = " + str(lasso_alpha) + ":")
     coefs, score, predicted = lasso(x_matrix, y, lasso_alpha)
+    
+    if score > best_score:
+        best_score = score
+        best_pred = predicted
+        best_coefs = coefs
     
     print("Intercept: " + str(coefs[-1]))
     for i in range(len(coefs)-1):
@@ -174,6 +187,28 @@ can be explained by variation in the independent variables")
     print("\nUsing Ridge regression with alpha = " + str(ridge_alpha) + ":")
     coefs, score, predicted = ridge(x_matrix, y, ridge_alpha)
     
+    if score > best_score:
+        best_score = score
+        best_pred = predicted
+        best_coefs = coefs
+        
+    if "output" in [s.lower().replace("-", "") for s in sys.argv]:
+        outp = pandas.DataFrame(columns = ["Name", "Coefficient", "Mean", "Deviation", "ONEHOT"])
+        outp["Name"] = data_sans_time.columns
+        outp["ONEHOT"] = [name.startswith("ONEHOT") for name in outp["Name"]]
+        outp.set_index("Name")
+        outp.loc[0, "Coefficient"] = 0
+        outp.loc[0, "Mean"] = best_coefs[-1]
+        outp.loc[0, "Deviation"] = data_sans_time["Average Turbidity"].std()
+        for i in range(len(x_matrix.columns)):
+            col = x_matrix.columns[i]
+            outp.loc[i + 1, "Coefficient"] = (col.replace(" ", ".").lower() != "average.turbidity") * best_coefs[i]
+            outp.loc[i + 1, "Mean"] = x_matrix[col].mean()
+            outp.loc[i + 1, "Deviation"] = x_matrix[col].std()
+        
+        outp.to_csv(files[0][:len(files[0]) - 4] + "_linreg.txt", sep = "\t", index = None)
+
+    
     print("Intercept: " + str(coefs[-1]))
     for i in range(len(coefs)-1):
         print("Coefficient for " + x_matrix.columns[i] + ": " + str(coefs[i]))
@@ -184,7 +219,7 @@ can be explained by variation in the independent variables")
     p = f_test(predicted, y, n_vars)
     print("p-value (chance that model is equal to null): "+str(p))
     
-    data["Predicted Turbidity"] = predicted
+    data["Predicted Turbidity"] = best_pred
     
     plt.plot("Average Turbidity", data = data, marker = "o", color = "black", linewidth = 2)
     plt.plot("Predicted Turbidity", data = data, marker = "o", color = "red", linewidth = 2)

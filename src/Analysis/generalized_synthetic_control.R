@@ -2,35 +2,21 @@ library(fect)
 library(readr)
 library(stringr)
 
-perform_gsynth <- function(times, treated, untreated){
+perform_gsynth <- function(path){
 	my_data <- data.frame()
-	index <- 1
 	
-	times <- parse_datetime(times, format = "%Y/%m/%d %H:%M %p")
+	files <- list.files(path)
 	
-	for(i in 1:length(treated)){
-		path <- treated[i]
-		samp <- read.delim(path, sep = "\t")
+	for(i in 1:length(files)){
+		samp <- read.delim(paste(path, files[i], sep = "/"), sep = "\t")
 		
 		samp$Datetime <- parse_datetime(samp$Datetime, format = "%B %d, %Y %H:%M %p")
 		
-		samp$Treated <- 1*(samp$Datetime >= times[i])
-		samp$Index <- index
-		index <- index + 1
+		samp$Index <- i
 		my_data <- rbind(samp, my_data)
 	}
 	
-	for(path in untreated){
-		samp <- read.delim(path, sep = "\t")
-		
-		samp$Datetime <- parse_datetime(samp$Datetime, format = "%B %d, %Y %H:%M %p")
-		
-		
-		samp$Treated <- FALSE
-		samp$Index <- index
-		index <- index + 1
-		my_data <- rbind(samp, my_data)
-	}
+	my_data$Treated <- as.integer(as.logical(my_data$Treated))
 	
 	turb <- ""
 	for(i in colnames(my_data)){
@@ -52,7 +38,10 @@ perform_gsynth <- function(times, treated, untreated){
 				X = x_cols,
 				index = c("Index", "Datetime"),
 				CV = FALSE,
-				r = c(0,5)				
+				r = c(0,5),
+				se = TRUE,
+				vartype = "parametric",
+				nboots = 1000
 			)
 			
 	return(g)
